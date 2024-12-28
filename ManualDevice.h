@@ -12,8 +12,8 @@ public:
     ManualDevice();
     ManualDevice(std::string, double);
 
+    void set_timer(Time&);
     std::string get_id() const;
-
 };
 
 std::ostream& operator<<(std::ostream&, ManualDevice&);

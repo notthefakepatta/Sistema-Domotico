@@ -11,23 +11,29 @@
 class Time
 {
 public:
+//  COSTRUTTORI
     /*  costruttore di default */
-    Time() : hours(0), minutes(0) {}
+    Time() : hours_(0), minutes_(0) {}
 
     /*  costruttore con orario definito */
-    Time(int h, int m) : hours(h), minutes(m) {}
+    Time(int h, int m);
 
+
+//  LETTURA ISTANZE PRIVATE
     /*  ore */
     int get_hours() const
-    {   return hours;}
+    {   return hours_;}
 
     /*  minuti */
     int get_minutes() const
-    {   return minutes;}
+    {   return minutes_;}
 
+//  MODIFICA ISTANZE PRIVATE
     /*  modifica di orario */
     void set_time(Time& t, int h, int m);
 
+
+//  OVERLOADING OPERATORI UTILI
     /*  overloading operator+ */
     Time operator+(const Time& t) const;
 
@@ -37,13 +43,14 @@ public:
     /*  overloading operator> */
     bool operator>(const Time& t) const;
 
-private:
-    int hours;
-    int minutes;
-};
+    /*  overloading operator< */
+    bool operator<(const Time& t) const;
 
-/*  possibilità di confrontare due orari tra di loro */
-int compareTo(const Time &t1, const Time &t2);
+
+private:
+    int hours_;
+    int minutes_;
+};
 
 /*  overloading dell'operator<< */
 std::ostream& operator<<(std::ostream& os, const Time& t);
