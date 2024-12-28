@@ -39,9 +39,10 @@ bool Time::operator>(const Time& t) const
     {
         if (get_minutes()>t.get_minutes())
             return true;
+        return false
     }
 
-    else return false;
+    return false;
 }
 
 /*  overloading di operator< */
@@ -54,9 +55,10 @@ bool Time::operator<(const Time& t) const
     {
         if (get_minutes()<t.get_minutes())
             return true;
+        return false
     }
 
-    else return false;
+    return false;
 }
 
 /*  l'oggetto della classe Time deve essere stampato secondo il formato
