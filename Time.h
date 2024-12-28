@@ -13,7 +13,7 @@ class Time
 public:
 //  COSTRUTTORI
     /*  costruttore di default */
-    Time() : hours(0), minutes(0) {}
+    Time() : hours_(0), minutes_(0) {}
 
     /*  costruttore con orario definito */
     Time(int h, int m);
