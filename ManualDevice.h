@@ -12,9 +12,13 @@ public:
     static const std::string kManIdentifier;
     
     ManualDevice();
+    ManualDevice(const ManualDevice&);
     ManualDevice(std::string, double);
 
     std::string get_id() const;
+
+    // copy assignment
+    ManualDevice& operator=(const ManualDevice&);
 };
 
 std::ostream& operator<<(std::ostream&, ManualDevice&);

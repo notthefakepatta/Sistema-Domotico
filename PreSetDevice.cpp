@@ -12,6 +12,15 @@ PreSetDevice::PreSetDevice()
     timer_ = Time();
 }
 
+// Copy constructor
+PreSetDevice::PreSetDevice(const PreSetDevice& pre_copy)
+{
+    name_ = pre_copy.name_;
+    power_amount_ = pre_copy.power_amount_;
+    id_ = pre_copy.id_;
+    timer_ = Time(pre_copy.timer_.get_hours(), pre_copy.timer_.get_minutes());
+}
+
 PreSetDevice::PreSetDevice(std::string name_set, double power_set, Time& working_time)
 {
     name_ = name_set;
@@ -19,6 +28,17 @@ PreSetDevice::PreSetDevice(std::string name_set, double power_set, Time& working
     id_ = kPreIdentifier + std::to_string(preset_device_counter_);
     preset_device_counter_++;
     timer_ = Time(working_time.get_hours(), working_time.get_minutes());
+}
+
+// copy assignment
+PreSetDevice& PreSetDevice::operator=(const PreSetDevice& pre_copy)
+{
+    name_ = pre_copy.name_;
+    power_amount_ = pre_copy.power_amount_;
+    id_ = pre_copy.id_;
+    timer_ = Time(pre_copy.timer_.get_hours(), pre_copy.timer_.get_minutes());
+    
+    return *this;
 }
 
 // Getter
@@ -36,7 +56,7 @@ Time PreSetDevice::get_timer()
 std::ostream& operator<<(std::ostream& os, PreSetDevice& to_print)
 {
     os << "Device name: " << to_print.get_name() << std::endl;
-    os << "Type: pre set cycle (PRE)" << std::endl;
+    os << "Type: preset cycle (PRE)" << std::endl;
     os << "ID: " << to_print.get_id() << std::endl;
     os << "Working time: " << to_print.get_timer().get_hours() << " ore e " << to_print.get_timer().get_minutes() << " minuti" << std::endl;
 

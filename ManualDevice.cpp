@@ -11,6 +11,14 @@ ManualDevice::ManualDevice()
     id_ = "";
 }
 
+// Copy constructor
+ManualDevice::ManualDevice(const ManualDevice& man_copy)
+{
+    name_ = man_copy.name_;
+    power_amount_ = man_copy.power_amount_;
+    id_ = man_copy.id_;
+}
+
 ManualDevice::ManualDevice(std::string name_set, double power_set)
 {
     name_ = name_set;
@@ -23,6 +31,16 @@ ManualDevice::ManualDevice(std::string name_set, double power_set)
 std::string ManualDevice::get_id() const
 {
     return id_;
+}
+
+// copy assignment
+ManualDevice& ManualDevice::operator=(const ManualDevice& man_copy)
+{
+    name_ = man_copy.name_;
+    power_amount_ = man_copy.power_amount_;
+    id_ = man_copy.id_;
+    
+    return *this;
 }
 
 // Operator overloading <<

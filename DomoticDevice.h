@@ -25,6 +25,8 @@ public:
     virtual std::string get_id() const = 0;
     
     // *** operator overloading == ***
+    bool operator==(const DomoticDevice&);
+
     void set_name(std::string);
 };
 

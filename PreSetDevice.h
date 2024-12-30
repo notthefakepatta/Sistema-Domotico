@@ -14,10 +14,14 @@ public:
     static const std::string kPreIdentifier;
 
     PreSetDevice();
+    PreSetDevice(const PreSetDevice&);
     PreSetDevice(std::string, double, Time&);
 
     Time get_timer();
     std::string get_id() const;
+
+    // copy assignment
+    PreSetDevice& operator=(const PreSetDevice&);
 };
 
 std::ostream& operator<<(std::ostream&, PreSetDevice&);
