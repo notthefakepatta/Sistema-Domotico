@@ -10,12 +10,8 @@ double DomoticDevice::get_power() const
     return power_amount_;
 }
 
+// L'operatore == confronta soltanto gli ID dei dispositivi in quanto univoci
 bool DomoticDevice::operator==(const DomoticDevice& d)
 {
-    return get_id() == d.get_id() && get_name() == d.get_name();
-}
-
-void DomoticDevice::set_name(std::string new_name)
-{
-    name_ = new_name;
+    return get_id() == d.get_id();
 }

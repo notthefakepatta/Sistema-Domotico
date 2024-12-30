@@ -53,6 +53,12 @@ Time PreSetDevice::get_timer()
 }
 
 // Operator overloading <<
+// il formato del messaggio stampato sarà del tipo:
+    // Device name: *nome del dispositivo*
+    // Type: preset cycle (PRE)
+    // ID: *ID del dispositivo*
+    // Working time: *durata del ciclo prefissato del dispositivo*
+    // Power usage/supplied: *potenza consumata/prodotta dal dispositivo* kW
 std::ostream& operator<<(std::ostream& os, PreSetDevice& to_print)
 {
     os << "Device name: " << to_print.get_name() << std::endl;

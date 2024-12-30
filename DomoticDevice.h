@@ -6,28 +6,30 @@
 class DomoticDevice
 {
 protected:
-    // data members
+    // dati membro
+    // nome del dispositivo
     std::string name_;
+    
+    // potenza consumata/prodotta
     double power_amount_;
 
 public:
+    // costruttore di default
     DomoticDevice() {};
     
-    // disabled copy construtor
+    // costruttore di copia dosabilitato
     DomoticDevice(const DomoticDevice&) = delete;
 
-    // disabled copy assignment
+    // operatore di copia disabilitato
     DomoticDevice& operator=(const DomoticDevice&) = delete;
 
-    // getters
+    // funzioni di accesso ai membri privati
     std::string get_name() const;
     double get_power() const;
     virtual std::string get_id() const = 0;
     
-    // *** operator overloading == ***
+    // overloading operatore ==
     bool operator==(const DomoticDevice&);
-
-    void set_name(std::string);
 };
 
 #endif // DOMOTIC_DEVICE_H
