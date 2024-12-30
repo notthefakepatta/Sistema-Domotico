@@ -1,7 +1,7 @@
 #include "ManualDevice.h"
 
 int ManualDevice::manual_device_counter_ = 0;
-const std::string ManualDevice::kPreIdentifier = "MAN";
+const std::string ManualDevice::kManIdentifier = "MAN";
 
 // Construcotrs
 ManualDevice::ManualDevice()
@@ -15,7 +15,7 @@ ManualDevice::ManualDevice(std::string name_set, double power_set)
 {
     name_ = name_set;
     power_amount_ = power_set;
-    id_ = kPreIdentifier + std::to_string(manual_device_counter_);
+    id_ = kManIdentifier + std::to_string(manual_device_counter_);
     manual_device_counter_++;
 }
 

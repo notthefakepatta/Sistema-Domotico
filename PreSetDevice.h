@@ -11,7 +11,7 @@ private:
     Time timer_;
 
 public:
-    static const std::string kManIdentifier;
+    static const std::string kPreIdentifier;
 
     PreSetDevice();
     PreSetDevice(std::string, double, Time&);

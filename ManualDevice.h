@@ -9,7 +9,7 @@ private:
     std::string id_;
 
 public:
-    static const std::string kPreIdentifier;
+    static const std::string kManIdentifier;
     
     ManualDevice();
     ManualDevice(std::string, double);
