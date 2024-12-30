@@ -24,6 +24,7 @@ public:
     double get_power() const;
     virtual std::string get_id() const = 0;
     
+    // *** operator overloading == ***
     void set_name(std::string);
 };
 

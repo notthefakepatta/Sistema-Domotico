@@ -1,6 +1,7 @@
 #include "PreSetDevice.h"
 
 int PreSetDevice::preset_device_counter_ = 0;
+const std::string PreSetDevice::kManIdentifier = "PRE";
 
 // Construcotrs
 PreSetDevice::PreSetDevice()
@@ -15,7 +16,7 @@ PreSetDevice::PreSetDevice(std::string name_set, double power_set, Time& working
 {
     name_ = name_set;
     power_amount_ = power_set;
-    id_ = "PRE" + std::to_string(preset_device_counter_);
+    id_ = kManIdentifier + std::to_string(preset_device_counter_);
     preset_device_counter_++;
     timer_ = Time(working_time.get_hours(), working_time.get_minutes());
 }

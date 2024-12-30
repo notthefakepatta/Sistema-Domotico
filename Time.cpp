@@ -29,6 +29,30 @@ void Time::set_time(Time& t, int h, int m)
     t = t2;
 }
 
+/*  overloading operator+ */
+Time Time::operator+(const Time& t) const
+{
+    int sum_minutes;
+    int sum_hours;
+
+    sum_minutes = (get_minutes() + t.get_minutes()) % 60;
+    sum_hours = get_hours() + t.get_hours() + (get_minutes() + t.get_minutes()) / 60;
+    if(sum_minutes > 23 && sum_hours > 59)
+    {
+        sum_hours = 23;
+        sum_minutes = 59;
+    }
+
+    Time time_sum(sum_hours, sum_minutes);
+    return time_sum;
+}
+
+/*  overloading operator- */
+//Time Time::operator-(const Time& t) const
+//{
+//    return;
+//}
+
 /*  overloading di operator> */
 bool Time::operator>(const Time& t) const
 {
