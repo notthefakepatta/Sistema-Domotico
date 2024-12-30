@@ -10,29 +10,9 @@ double DomoticDevice::get_power() const
     return power_amount_;
 }
 
-Time DomoticDevice::get_off_time() const
+bool DomoticDevice::operator==(const DomoticDevice& d)
 {
-    return turn_off_time_;
-}
-
-Time DomoticDevice::get_on_time() const
-{
-    return turn_on_time_;
-}
-
-Time DomoticDevice::get_timer() const
-{
-    return timer_;
-}
-
-void DomoticDevice::set_off_time(Time& t)
-{
-    turn_off_time_ = Time(t.get_hours(), t.get_minutes());
-}
-
-void DomoticDevice::set_on_time(Time& t)
-{
-    turn_on_time_ = Time(t.get_hours(), t.get_minutes());
+    return get_id() == d.get_id() && get_name() == d.get_name();
 }
 
 void DomoticDevice::set_name(std::string new_name)

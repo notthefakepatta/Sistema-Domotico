@@ -1,6 +1,7 @@
 #include "ManualDevice.h"
 
 int ManualDevice::manual_device_counter_ = 0;
+const std::string ManualDevice::kManIdentifier = "MAN";
 
 // Construcotrs
 ManualDevice::ManualDevice()
@@ -8,28 +9,38 @@ ManualDevice::ManualDevice()
     name_= "";
     power_amount_ = 0;
     id_ = "";
-    turn_off_time_ = Time();
-    turn_on_time_ = Time();
-    timer_ = Time();
+}
+
+// Copy constructor
+ManualDevice::ManualDevice(const ManualDevice& man_copy)
+{
+    name_ = man_copy.name_;
+    power_amount_ = man_copy.power_amount_;
+    id_ = man_copy.id_;
 }
 
 ManualDevice::ManualDevice(std::string name_set, double power_set)
 {
     name_ = name_set;
     power_amount_ = power_set;
-    id_ = "MAN" + std::to_string(manual_device_counter_);
+    id_ = kManIdentifier + std::to_string(manual_device_counter_);
     manual_device_counter_++;
-}
-
-void ManualDevice::set_timer(Time& new_timer)
-{
-    timer_ = Time(new_timer.get_hours(), new_timer.get_minutes());
 }
 
 // Getter
 std::string ManualDevice::get_id() const
 {
     return id_;
+}
+
+// copy assignment
+ManualDevice& ManualDevice::operator=(const ManualDevice& man_copy)
+{
+    name_ = man_copy.name_;
+    power_amount_ = man_copy.power_amount_;
+    id_ = man_copy.id_;
+    
+    return *this;
 }
 
 // Operator overloading <<
@@ -49,22 +60,4 @@ std::ostream& operator<<(std::ostream& os, ManualDevice& to_print)
         os << "Power supplied: " << to_print.get_power() << " kW" << std::endl;
 
     return os;
-}
-
-int main()
-{
-    ManualDevice man_dev1("name1", 1.5);
-    std::cout << man_dev1;
-    
-    ManualDevice man_dev2("name2", -3.2);
-    std::cout << man_dev2;
-    Time t(10,15);
-    man_dev2.set_timer(t);
-    //man_dev2.set_off_time(t);
-    std::cout << man_dev2.get_timer();
-
-    ManualDevice man_dev3;
-    std::cout << man_dev3;
-
-    return 0;
 }

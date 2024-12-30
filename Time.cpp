@@ -29,6 +29,49 @@ void Time::set_time(Time& t, int h, int m)
     t = t2;
 }
 
+/*  overloading operator+ */
+Time Time::operator+(const Time& t) const
+{
+    int sum_minutes;
+    int sum_hours;
+
+    sum_minutes = (minutes_ + t.minutes_) % 60;
+    sum_hours = hours_ + t.hours_ + (minutes_ + t.minutes_) / 60;
+    
+    if(sum_hours > 23)
+    {
+        sum_hours = 23;
+        sum_minutes = 59;
+    }
+
+    Time time_sum(sum_hours, sum_minutes);
+    return time_sum;
+}
+
+/*  overloading operator- */
+Time Time::operator-(const Time& t) const
+{
+    int dif_hours;
+    int dif_minutes = 0;
+
+    dif_minutes = minutes_ - t.minutes_;
+    if(dif_minutes < 0)
+    {
+        dif_hours--;
+        dif_minutes += 60;
+    }
+    
+    dif_hours += hours_ - t.hours_;
+    if(dif_hours < 0)
+    {
+        dif_hours = 0;
+        dif_minutes = 0;
+    }
+
+    Time time_dif(dif_hours, dif_minutes);
+    return time_dif;
+}
+
 /*  overloading di operator> */
 bool Time::operator>(const Time& t) const
 {
