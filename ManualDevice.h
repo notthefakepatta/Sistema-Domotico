@@ -28,7 +28,7 @@ public:
     // (nome del dispositivo, produzione/consumo di potenza)
     ManualDevice(std::string, double);
 
-    // funzione di accesso al membro pirvato id_
+    // funzione di accesso al membro privato id_
     std::string get_id() const;
 
     // operatore di copia
