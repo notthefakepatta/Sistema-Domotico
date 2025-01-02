@@ -10,14 +10,14 @@ void DomoticSystem::reset_time()
     // eliminia da event_log_ tutti gli eventi di accensione/spegnimento non associati a dei timer
     for(Event e : event_log_)
     {
-        if(e.trigger_ == Event::kJustOnOff)
+        if(e.trigger_ == Event::kManualTrigger)
             event_log_.erase(e);
     }
 
     // porta tutti i dispositivi alle condizioni iniziali
     for(DomoticDevice& generic_device : connected_devices_)
     {
-        Event initial_conditions(generic_device, time_, Event::kOff, Event::kJustOnOff);
+        Event initial_conditions(generic_device, time_, Event::kOff, Event::kManualTrigger);
         event_log_.insert(initial_conditions);
     }
 }
@@ -28,7 +28,7 @@ void DomoticSystem::reset_timers()
     // eliminia da event_log_ tutti gli eventi di accensione/spegnimento associati a dei timer
     for(Event e : event_log_)
     {
-        if(e.trigger_ == Event::kTimer)
+        if(e.trigger_ == Event::kTimerTrigger)
             event_log_.erase(e);
     }
 }
@@ -45,7 +45,7 @@ void DomoticSystem::reset_all()
     // porta tutti i dispositivi alle condizioni iniziali
     for(DomoticDevice& generic_device : connected_devices_)
     {
-        Event initial_conditions(generic_device, time_, Event::kOff, Event::kJustOnOff);
+        Event initial_conditions(generic_device, time_, Event::kOff, Event::kManualTrigger);
         event_log_.insert(initial_conditions);
     }
 }

@@ -26,14 +26,14 @@ struct Event
 
 //  COSTRUTTORE
     Event(DomoticDevice& d, Time t, bool s, bool tr)
-        : device_(d), start_or_end_time_(t), status_(s), trigger_(tr) {}
+        : device_(d), start_or_end_time_(t), status_(s) {}
 
 //  VARIABILI STATICHE DI CLASSE
     static const bool kOn = true;
     static const bool kOff = false;
 
-    static const bool kTimer = true;
-    static const bool kJustOnOff = false;
+    static const bool kTimerTrigger = true;
+    static const bool kManualTrigger = false;
 };
 
 //  OVERLOADING OPERATORI UTILI
