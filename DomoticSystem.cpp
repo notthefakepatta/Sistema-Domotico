@@ -1,0 +1,381 @@
+// Alessandro Pattaro 2101822
+
+#include "DomoticSystem.h"
+#include <algorithm>
+#include <stdexcept>
+#include <cmath>
+
+/*  aggiunge un dispositivo alla rete di casa */
+void DomoticSystem::add(const DomoticDevice& d)
+{
+    /*  aggiungendo un elettrodomestico alla rete di casa è necessario creare un'opportuna consumptioncard per
+     *  monitorare i consumi dello stesso. */
+    ConsumptionCard c(d);
+
+    /*  controllare che il dispositivo non sia già inserito */
+    std::map<std::string, ConsumptionCard>::iterator it = consumption_log_.find(c.device_.get_name());
+    if (it != consumption_log_.end())
+        throw std::logic_error("The device already exists");
+
+    /*  inserimento rispettando il binomio chiave valore della mappa */
+    consumption_log_.insert({c.device_.get_name(), c});
+}
+
+/*  avanzamento nel tempo */
+void DomoticSystem::set_time(Time t)
+{
+    /*  non è concesso tornare indietro nel tempo */
+    if (time_ > t)
+    {    throw std::invalid_argument("Invalid input");}
+
+    /*  aggiornamento delle variabili temporali */
+    last_time_ = time_;
+    time_ = t;
+
+    /*  gestione dei consumi: è necessario scandire il range in cui gli eventi vanno stampati ed esaminati, ovvero
+     *  tutti quelli nell'intervallo ]last_time_ : time_] */
+    Time first = last_time_ + Time::kOneMinute;
+    std::multiset<Event>::iterator start = std::find_if(event_log_.begin(), event_log_.end(),
+                                            [this, &first] (const Event& e){return e.start_or_end_time_ == first;});
+
+    Time last;
+    std::multiset<Event>::iterator end;
+    if (t != Time::kAllDayLongTimer)
+    {
+        last = t + Time::kOneMinute;
+        end = std::find_if(start, event_log_.end(),[this, &last] (const Event& e) {return e.start_or_end_time_ == last;});
+    }
+    else
+        end = event_log_.end();
+
+    while (start != end)
+    {
+        Event& e = const_cast<Event&>(*start);
+        if (e.ignore_ == false)
+        {
+            std::cout << e;
+
+            /*  caso di spegnimento di un dispositivo */
+            if (e.status_ == Event::kOff)
+            {
+                /*  aggiornamento consumo del dispositivo dal momento dell'accensione
+                 *  a quello del suo spegnimento */
+                Time elapsed_time = e.start_or_end_time_ - e.device_card_.last_check_;
+                double energy_per_minute = e.device_card_.device_.get_power()/Time::kMinutesPerHour;
+                double new_consumption = time_to_minutes(elapsed_time)*energy_per_minute;
+                e.device_card_.consumption_ += new_consumption;
+                e.device_card_.status_ = ConsumptionCard::kOff;
+            }
+            /*  accensione */
+            else
+            {
+                /*  aggiornamento latest_check e dello status */
+                e.device_card_.last_check_ = e.start_or_end_time_;
+                e.device_card_.status_ = ConsumptionCard::kOn;
+            }
+        }
+        ++start;
+    }
+
+    /*  aggiornamento consumi di cicli non ancora terminati */
+    for (std::map<std::string, ConsumptionCard>::iterator it = consumption_log_.begin(); it != consumption_log_.end(); it++)
+    {
+        ConsumptionCard& c = it->second;
+        update_consumption(c);
+        c.last_check_ = time_;
+    }
+}
+
+/*  spegne un dispositivo acceso */
+void DomoticSystem::set_off(const DomoticDevice& d)
+{
+    /*  il dispositivo deve fare parte del sistema */
+    std::map<std::string, ConsumptionCard>::iterator it_map = consumption_log_.find(d.get_name());
+    if (it_map == consumption_log_.end())
+        throw std::invalid_argument("Device not found");
+
+    ConsumptionCard& c = it_map->second;
+    if (c.status_ != ConsumptionCard::kOn)
+        throw std::domain_error("Device is currently off");
+
+    /*  creazione dell'evento */
+    Event new_off(c, time_);
+
+    /*  settare status e trigger, inserimento nel log */
+    new_off.status_ = Event::kOff;
+    new_off.trigger_ = Event::kManualTrigger;
+    event_log_.insert(new_off);
+
+    /*  cambio stato della card */
+    c.status_ = ConsumptionCard::kOff;
+
+    /*  impostare come ignore l'evento precedentemente disposto per lo spegnimento. E' necessario controllare partendo
+     *  dalla prima occorrenza di spegnimento del dispositivo nell'intervallo ]time_ : kAllDayLongTimer]*/
+    std::multiset<Event>::iterator it = std::find_if(event_log_.begin(), event_log_.end(),
+                                    [this] (const Event& e){   return e.start_or_end_time_ == time_+ Time::kOneMinute;});
+
+    while (it != event_log_.end())
+    {
+        Event& e = const_cast<Event&>(*it);
+        if (e == d && e.ignore_ == false)
+        {
+            e.ignore_ = true;
+            it = event_log_.end();
+        }
+        it++;
+    }
+
+    /*  nel caso in cui si tratti di un dispositivo in grado di produrre energia, è necessario ripristinare la potenza disponibile */
+    if (d.get_power()>0)
+    {
+        double reduce_power = -d.get_power();
+        modify_power_available(reduce_power);
+    }
+}
+
+/*  accende un dispositivo */
+void DomoticSystem::set_on(const DomoticDevice& d)
+{
+    /*  il dispositivo deve fare parte del sistema! */
+    std::map<std::string, ConsumptionCard>::iterator it_map = consumption_log_.find(d.get_name());
+    if (it_map == consumption_log_.end())
+        throw std::invalid_argument("Device not found");
+
+    ConsumptionCard& c = it_map->second;
+
+    /*  il dispositivo deve essere spento, motivo per cui è necessario effettuare la scannerizzazione di event_log_ partendo
+     *  da time_ e procedendo a ritroso fino alla prima occorrenza che riguarda il dispositivo: se questa non viene trovata
+     *  o corrisponde a uno spegnimento allora si può procedere */
+
+    if (c.status_ == ConsumptionCard::kOn)
+        throw std::domain_error("Device is already on");
+
+    /*  deve essere disponibile abbastanza potenza per il dispositivo: il vincolo si applica solo ai dispositivi che
+     *  consumano energia, ovvero quelli con get_power() <0 */
+    double p = c.device_.get_power();
+    if (c.device_.get_power()<0 && std::abs(p) > power_available_)
+        throw std::domain_error("Not enough power");
+
+    /*  passato il controllo è necessario aggiornare la potenza disponibile visto che sta venendo acceso con successo */
+    modify_power_available(p);
+
+    /*  è necessario capire che tipo di dispositivo sia d, così da poter creare un evento con i timer corretti */
+    const int COUNT = ManualDevice::kManIdentifier.size();
+    std::string id = d.get_id();
+    std::string begin_id (id.begin(), id.begin() +COUNT);
+
+    /*  manuale */
+    if (begin_id == ManualDevice::kManIdentifier)
+    {
+        /*  se è manuale ci si serve della variabile statica
+         *  ALL_DAY_LONG_TIMER così da essere sicuri che qualsiasi sia
+         *  l'orario di inizio il dispositivo rimarrà acceso fino a fine
+         *  giornata o, in alternativa, fino all'arrivo di nuove istruzioni.
+         *  Creazione dei due Event da inserire in event_log_ */
+        Event on(c, time_);
+        on.trigger_ = Event::kManualTrigger;
+        on.status_ = Event::kOn;
+
+        Event off(c, Time::kAllDayLongTimer);
+        off.trigger_ = Event::kManualTrigger;
+        off.status_ = Event::kOff;
+
+        /*  inserimento */
+        event_log_.insert(on);
+        event_log_.insert(off);
+    }
+
+    /*  ciclo prefissato */
+    else
+    {
+        /*  creazione dei due Event da inserire in event_log_, che
+         *  sono già muniti di timer */
+        Event on(c, time_);
+        on.trigger_ = Event::kManualTrigger;
+        on.status_ = Event::kOn;
+
+        /*  E' necessario fare un downcast di d, in quanto non è possibile la lettura del timer */
+        const DomoticDevice* d_ptr = &d;
+        const PresetDevice* p_ptr = static_cast<const PresetDevice*>(d_ptr);
+
+        Event off(c, time_ + p_ptr->get_timer());
+        off.trigger_ = Event::kManualTrigger;
+        off.status_ = Event::kOff;
+
+        /*  inserimento */
+        event_log_.insert(on);
+        event_log_.insert(off);
+    }
+}
+
+/*  accende un dispositivo ManualDevice con orario di inizio
+ *  e di fine prestabiliti */
+void DomoticSystem::start_and_stop(const ManualDevice& m, Time start, Time stop)
+{
+    /*  il dispositivo deve fare parte del sistema */
+    std::map<std::string, ConsumptionCard>::iterator it_map = consumption_log_.find(m.get_name());
+    if (it_map == consumption_log_.end())
+        throw std::invalid_argument("Device not found");
+
+    /*  è concesso programmare solo nel futuro */
+    if (time_ > start || time_ > stop)
+    {    throw std::invalid_argument("Invalid input");}
+
+    /*  controllo correttezza di input: start deve essere un orario antecedente a stop*/
+    if (start > stop)
+    {    throw std::invalid_argument("Invalid input");}
+
+    /*  riconoscimento della card */
+    ConsumptionCard& c = it_map->second;
+
+    /*  creazione e inserimento degli eventi */
+    Event on(c, start);
+    on.status_ = Event::kOn;
+    on.trigger_ = Event::kTimerTrigger;
+
+    Event off(c, stop);
+    off.status_ = Event::kOff;
+    off.trigger_ = Event::kTimerTrigger;
+
+    event_log_.insert(on);
+    event_log_.insert(off);
+
+    std::cout << "[" << time_ << "]" << " Impostato un timer per il dispositivo " << c.device_.get_name();
+    std::cout << " dalle " << start << " alle " << stop << std::endl;
+}
+
+/*  accende un dispositivo PresetDevice ad un orario futuro prestabilito */
+void DomoticSystem::start_and_stop(const PresetDevice& p, Time start)
+{
+    /*  il dispositivo deve fare parte del sistema */
+    std::map<std::string, ConsumptionCard>::iterator it = consumption_log_.find(p.get_name());
+    if (it == consumption_log_.end())
+        throw std::invalid_argument("Device not found");
+
+    /*  è concesso programmare solo nel futuro */
+    if (time_ > start)
+    {    throw std::domain_error("Invalid input");}
+
+    std::map<std::string, ConsumptionCard>::iterator it_map = consumption_log_.find(p.get_name());
+    ConsumptionCard& c = it_map->second;
+
+    /*  creazione e inserimento degli eventi */
+    Event on(c, start);
+    on.status_ = Event::kOn;
+    on.trigger_ = Event::kTimerTrigger;
+
+    Time stop = start + p.get_timer();
+    Event off(c, stop);
+    on.status_ = Event::kOff;
+    on.trigger_ = Event::kTimerTrigger;
+
+    event_log_.insert(on);
+    event_log_.insert(off);
+
+    std::cout << "[" << time_ << "]" << " Impostato un timer per il dispositivo " << c.device_.get_name();
+    std::cout << " dalle " << start << " alle " << stop << std::endl;
+}
+
+/*  rimuove il timer associato al dispositivo */
+void DomoticSystem::remove(const ManualDevice& m)
+{
+    /*  il dispositivo deve fare parte del sistema */
+    std::map<std::string, ConsumptionCard>::iterator it = consumption_log_.find(m.get_name());
+    if (it == consumption_log_.end())
+        throw std::invalid_argument("Device not found");
+
+    /*  la rimozione di un timer per un dispositivo manuale corrisponde all'eliminazione di ogni evento che riguarda il dispositivo
+     *  da event_log_ tranne la prima accensione che avverrà/è avvenuta, infatti rimuovendo tutti i timer il dispositivo
+     *  è destinato a non spegnersi più dopo di essa. E' necessario dividere in due casi, ovvero quello in cui al
+     *  momento dell'esecuzione il dispositivo è spento e quando invece è acceso */
+    const DomoticDevice& d_ref = m;
+    std::multiset<Event>::iterator first_occurrence_it = std::find_if(event_log_.begin(), event_log_.end(),
+                                                            [this, &d_ref] (const Event& e){   return e == d_ref;});
+
+
+    /*  se la prima occorrenza è di accensione del dispositivo, questa non va rimossa e
+     *  quindi va incrementato l'iteratore affinché la escluda dall'algoritmo for_each, al
+     *  contrario se si tratta di spegnimento va compresa nell'eliminazione */
+
+    if (first_occurrence_it != event_log_.end() && first_occurrence_it->status_ == Event::kOn)
+    {   ++first_occurrence_it;}
+
+    /*  ricerca e settaggio a ignore */
+    for (; first_occurrence_it != event_log_.end(); ++first_occurrence_it)
+    {
+        if (first_occurrence_it->device_card_ == m)
+        {
+            Event& non_const = const_cast<Event&>(*first_occurrence_it);
+            non_const.ignore_=true;
+        }
+    }
+
+    /*  aggiunta di evento di spegnimento per m a fine giornata in quanto manual */
+    std::map<std::string, ConsumptionCard>::iterator it_map = consumption_log_.find(m.get_name());
+    ConsumptionCard& c = it_map->second;
+    Event new_off (c, Time::kAllDayLongTimer);
+    new_off.status_ = Event::kOff;
+    new_off.trigger_ = Event::kManualTrigger;
+    event_log_.insert(new_off);
+}
+
+/*  mostra resoconto energetico di tutti i dispositivi inseriti */
+void DomoticSystem::show()
+{
+    /*  è necessario calcolare il totale di produzione e assorbimento
+     *  di energia di tutti i dispositivi registrati in consumption_log_ */
+    std::string msg;
+    double total_consumption = ConsumptionCard::kDefaultConsumption;
+    double total_production = ConsumptionCard::kDefaultConsumption;
+
+    for (std::map<std::string, ConsumptionCard>::iterator it_map = consumption_log_.begin(); it_map != consumption_log_.end(); it_map++)
+    {
+        ConsumptionCard& c = it_map->second;
+        /*  calcolo produzione */
+        if (c.device_.get_power()>0)
+        {   total_production = total_production+ c.consumption_;}
+
+        /*  o assorbimento */
+        else
+        {   total_consumption += c.consumption_;}
+
+        /*  aggiornamento del resoconto */
+        msg += "\n- "  + to_string(c);
+    }
+
+    /*  completamento del messaggio e stampa */
+    std::cout << "[" << time_ << "]" << " Attualmente il sistema ha prodotto " << total_production;
+    std::cout << "e consumato " << total_consumption << ". Nello specifico:" << msg <<std::endl;
+}
+
+/*  mostra resoconto energetico del dispositivo */
+void DomoticSystem::show(const DomoticDevice& d)
+{
+    /*  cerca la card in consumption_log_ */
+    std::map<std::string, ConsumptionCard>::iterator it_map = consumption_log_.find(d.get_name());
+
+    /*  il dispositivo deve fare parte del sistema */
+    if (it_map == consumption_log_.end())
+        throw std::invalid_argument("Device not found");
+
+    ConsumptionCard& c = it_map->second;
+
+    std::cout << "[" << time_ << "]" << " " << c << std::endl;
+}
+
+/*  modifica max_supplied_power_ qualora venga aggiunto un dispositivodi produzione energetica */
+void DomoticSystem::modify_power_available(double s)
+{   power_available_ += s;}
+
+/*  aggiorna coi dati mancanti il consumo di un dispositivo nell'apposita card se è necessario */
+void DomoticSystem::update_consumption(ConsumptionCard& c)
+{
+    /*  aggiornamento se necessario */
+    if (c.status_ == ConsumptionCard::kOn)
+    {
+        Time enlapsed_time = time_ - c.last_check_;
+        double new_consumption = time_to_minutes(enlapsed_time)*c.device_.get_power();
+        c.consumption_ += new_consumption;
+    }
+}
+

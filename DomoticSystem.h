@@ -6,29 +6,24 @@
 
 #include <set>
 #include <vector>
-#include <functional>
+#include <map>
 #include "Time.h"
+#include "Event.h"
+#include "ConsumptionCard.h"
 #include "DomoticDevice.h"
-#inlcude "ManualDevice.h"
+#include "ManualDevice.h"
 #include "PresetDevice.h"
 
 class DomoticSystem
 {
 public:
 //  SETUP DI DOMOTICSYSTEM E COMANDI DI CLASSE
-
     /*  costruttore */
     DomoticSystem();
 
     /*  aggiunge un dispositivo al vettore all_devices_, indicando
-        che l'attuale rete di elettrodomestici comprende anche questo
-        dispositivo */
-    void add(DomoticDevice d);
-    {   all_devices_.push_back(d);}
-
-    /*  consumo del dispositivo dal momento dell'attivazione a quello
-        dell'invocazione della funzione stessa */
-    double get_consumption(DomoticDevice d) const;
+        che l'attuale rete di elettrodomestici comprende anche questo dispositivo */
+    void add(const DomoticDevice& d);
 
     /*  avanzamento nel tempo */
     void set_time(Time t);
@@ -40,32 +35,27 @@ public:
 
 //  FUNZIONI PER L'INTERFACCIA UTENTE
 
-    /*  spegne un dispositivo acceso, rimuovendolo quindi da una delle
-        strutture a cui appartiene (connected_devices_ o connected_timer_devices_) */
-    void set_off(DomoticDevice d);
+    /*  spegne un dispositivo acceso */
+    void set_off(const DomoticDevice& d);
 
-    /*  accende un dispositivo, aggiungendolo a una delle due strutture
-        a seconda del tipo dell'oggetto: se si tratta di un ManualDevice
-        sprovvisto di timer andrà in connected_devices, altrimenti in
-        connected_timer_devices_ */
-    void set_on(DomoticDevice d);
+    /*  accende un dispositivo */
+    void set_on(const DomoticDevice& d);
 
-    /*  accende un dispositivo ManualDevice con un timer nel caso in cui sia spento,
-        inserendolo in connected_timer_devices_ , altrimenti, se il dispositivo in
-        questione è già acceso, lo rimuove da connected_devices_ per aggiungerlo
-        a connected_timer_devices */
-    void start_and_stop(ManualDevice m, Time start, Time stop);
+    /*  accende un dispositivo ManualDevice con orario di inizio
+     *  e di fine prestabiliti */
+    void start_and_stop(const ManualDevice& m, Time start, Time stop);
 
-    void start_and_stop(PresetDevice p, Time start);
+    /*  accende un dispositivo PresetDevice ad un orario futuro prestabilito */
+    void start_and_stop(const PresetDevice& p, Time start);
 
     /*  rimuove il timer associato al dispositivo */
-    void remove(ManualDevice m);
+    void remove(const ManualDevice& m);
 
-    /*  mostra resoconto di tutti i dispositivi inseriti da add in all_devices_ */
-    std::string show() const;
+    /*  mostra resoconto energetico di tutti i dispositivi inseriti */
+    void show();
 
     /*  mostra resoconto dello specifico dispositivo */
-    std::string show(DomoticDevice d) const;
+    void show(const DomoticDevice& d);
 
 
 //  COMANDI PER IL DEBUG
@@ -84,29 +74,28 @@ public:
 
 private:
     /*  costante di potenza energetica fornita, 3.5kW come da specifica */
-    double const POWER_ = 3.5;
+    double const kPower_ = 3.5;
 
     /*  cap di massimo consumo del sistema */
-    double max_supplied_power_ = POWER_;
+    double power_available_ = kPower_;
 
     /*  gestisce il tempo all'interno di un DomoticSystem.h */
     Time time_;
 
-    /*  coda prioritaria che gestisce i dispositivi connessi
-     *  che dispongono di un timer (quindi o dispositivi CP o manuali
-     *  con timer inserito) */
-    std::multiset<DomoticDevice> connected_timer_devices_;
+    /*  riporta l'orario dell'ultimo set_time() */
+    Time last_time_;
 
-    /*  vector contenente i dispositivi connessi manuali sprovvisti
-     *  di relativo timer */
-    std::vector<ManualDevice> connected_devices_;
+    /*  registro eventi di accensione e spegnimento di un dispositivo */
+    std::multiset<Event> event_log_;
 
-    /*  vector contenente il resoconto di tutti i dispositivi connessi */
-    std::vector<DomoticDevice> all_devices_;
+    /*  registro di consumo */
+    std::map<std::string, ConsumptionCard> consumption_log_;
 
-    /*  modifica max_supplied_power_ qualora venga aggiunto un dispositivo
-        di produzione energetica */
-    void modify_supplied_power(double s);
+    /*  modifica max_supplied_power_ qualora venga aggiunto un dispositivo di produzione energetica */
+    void modify_power_available(double s);
+
+    /*  aggiorna coi dati mancanti il consumo di un dispositivo nell'apposita card se è necessario */
+    void update_consumption(ConsumptionCard& c);
 };
 
 #endif //DOMOTICSYSTEM_H
