@@ -91,7 +91,8 @@ private:
     /*  modifica max_supplied_power_ qualora venga aggiunto un dispositivo di produzione energetica */
     void modify_power_available(double s);
 
-    /*  aggiorna coi dati mancanti il consumo di un dispositivo nell'apposita card se è necessario */
+    /*  aggiorna con i dati mancanti il consumo di un dispositivo nell'apposita card se è necessario
+        ovvero in caso di cicli non ultimati */
     void update_consumption(ConsumptionCard& c);
 };
 
