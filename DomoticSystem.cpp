@@ -20,13 +20,6 @@ void DomoticSystem::add(const DomoticDevice& d)
         throw std::logic_error("The device already exists");
     /*  inserimento rispettando il binomio chiave-valore della mappa */
     consumption_log_.insert({c.device_.get_name(), c});
-
-
-
-
-    // DEBGUG
-    //for(auto it = consumption_log_.begin(); it != consumption_log_.end(); it++)
-        //std::cout << static_cast <ManualDevice&>(const_cast<DomoticDevice&>(it->second.device_)) << std::endl;
 }
 
 /*  avanzamento nel tempo */
@@ -37,7 +30,7 @@ void DomoticSystem::set_time(Time t)
     {    throw std::invalid_argument("Invalid input");}
 
     /*  gestione dei consumi: è necessario scandire il range in cui gli eventi vanno esaminati e stampati, ovvero
-     *  tutti quelli nell'intervallo dal precedente valore di time all'ultimo aggiornato */
+     *  tutti quelli nell'intervallo che va dal precedente valore di time all'aggiornato imminente */
     Time first = time_;
     std::multiset<Event>::iterator start = std::find_if(event_log_.begin(), event_log_.end(),
                                             [this, &first] (const Event& e){return e.start_or_end_time_ >= first;});
@@ -46,10 +39,13 @@ void DomoticSystem::set_time(Time t)
 
     std::cout << "[" << time_ << "] " << "L'orario attuale e' " << time_ << std::endl;
 
+    /*  viene stampato tutto ciò che appartiene all'intervallo appena definito, specificando di evento in evento 
+        le azioni da compiere (in base al tipo di evento, ovvero accensione e spegnimento) */
     while (start != end)
     {
         Event& e = const_cast<Event&>(*start);
 
+        /*  se l'evento non è stato contrassegnato come ignore, allora è opportuno operare le modifiche */
         if (e.ignore_ == false)
         {
             std::cout << e;
@@ -57,6 +53,7 @@ void DomoticSystem::set_time(Time t)
             /*  caso di spegnimento di un dispositivo */
             if (e.status_ == Event::kOff)
             {
+                /*  modifica dello status del dispositivo da ConsumptionCard */
                 e.device_card_.status_ = ConsumptionCard::kOff;
 
                 /*  aggiornamento consumo del dispositivo dall'ultimo check a al momento del suo spegnimento */
@@ -67,13 +64,14 @@ void DomoticSystem::set_time(Time t)
 
                 /*  modificare la potenza disponibile: che sia un dispositivo di consumo o produzione di energia,
                  *  per ripristinare la potenza disponibile al valore precedente all'utilizzo dello stesso è necessario
-                 *  prendere la potenza col segno opposto */
+                 *  prendere la potenza del dispositivo con segno opposto */
                 double p = e.device_card_.device_.get_power();
                 modify_power_available(-p);
             }
             /*  accensione */
             else
             {
+                /*  modifica dello status del dispositivo da ConsumptionCard */
                 e.device_card_.status_ = ConsumptionCard::kOn;
 
                 /*  controllo che venga rispettato il limite di potenza disponibile: se così non fosse, come da
@@ -115,6 +113,7 @@ void DomoticSystem::set_off(const std::string s)
     if (it_map == consumption_log_.end())
         throw std::invalid_argument("Device not found");
 
+    /*  il dispositivo deve essere acceso */
     ConsumptionCard& c = it_map->second;
     if (c.status_ != ConsumptionCard::kOn)
         throw std::domain_error("Device is currently off");
@@ -131,7 +130,7 @@ void DomoticSystem::set_off(const std::string s)
     c.status_ = ConsumptionCard::kOff;
 
     /*  impostare come ignore l'evento precedentemente disposto per lo spegnimento. E' necessario controllare partendo
-     *  dalla prima occorrenza di spegnimento del dispositivo nell'intervallo ]time_ : kAllDayLongTimer]*/
+     *  dalla prima occorrenza di spegnimento del dispositivo nell'intervallo da time_ a kAllDayLongTimer*/
     std::multiset<Event>::iterator it = std::find_if(event_log_.begin(), event_log_.end(),
                                     [this] (const Event& e){   return e.start_or_end_time_ > time_;});
 
@@ -156,6 +155,7 @@ void DomoticSystem::set_on(const std::string s)
         throw std::invalid_argument("Device not found");
 
     ConsumptionCard& c = it_map->second;
+    
     /*  il dispositivo deve essere spento, motivo per cui è necessario effettuare la scannerizzazione di event_log_ partendo
      *  da time_ e procedendo a ritroso fino alla prima occorrenza che riguarda il dispositivo: se questa non viene trovata
      *  o corrisponde a uno spegnimento allora si può procedere */
@@ -191,8 +191,7 @@ void DomoticSystem::set_on(const std::string s)
     /*  ciclo prefissato */
     else
     {
-        /*  creazione dei due Event da inserire in event_log_, che
-         *  sono già muniti di timer */
+        /*  creazione dei due Event da inserire in event_log_, che sono già muniti di timer */
         Event on(c, time_);
         on.trigger_ = Event::kManualTrigger;
         on.status_ = Event::kOn;
@@ -211,8 +210,7 @@ void DomoticSystem::set_on(const std::string s)
     }
 }
 
-/*  accende un dispositivo ManualDevice con orario di inizio
- *  e di fine prestabiliti */
+/*  accende un dispositivo ManualDevice con orario di inizio e di fine prestabiliti */
 void DomoticSystem::start_and_stop(const std::string s, Time start, Time stop)
 {
     /*  il dispositivo deve fare parte del sistema */
@@ -224,7 +222,7 @@ void DomoticSystem::start_and_stop(const std::string s, Time start, Time stop)
     if (time_ > start || time_ > stop)
     {    throw std::invalid_argument("Invalid input");}
 
-    /*  controllo correttezza di input: start deve essere un orario antecedente a stop*/
+    /*  controllo correttezza di input: start deve essere un orario antecedente a stop */
     if (start > stop)
     {    throw std::invalid_argument("Invalid input");}
 
@@ -370,7 +368,9 @@ void DomoticSystem::modify_power_available(double s)
 /*  aggiorna coi dati mancanti il consumo di un dispositivo nell'apposita card se è necessario */
 void DomoticSystem::update_consumption(ConsumptionCard& c)
 {
-    /*  aggiornamento se necessario */
+    /*  L'aggiornamento se necessario, ovvero se quando viene chiamata la funzione all'interno 
+        di set_time ci sono dispositivi accesi che devono tuttavia avere consumo aggiornato 
+        parzialmente, ovvero prima del loro effettivo spegnimento (come avviene altrimenti) */
     if (c.status_ == ConsumptionCard::kOn)
     {
         Time enlapsed_time = time_ - c.last_check_;
