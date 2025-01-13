@@ -286,7 +286,16 @@ int main()
 
     /*Variabili double per la potenza dei vari dispositivi*/
 
-    const double 
+    const double pow_Impianto = 1.5;
+    const double pow_Pompa = -2.0;
+    const double pow_Scaldabagno = -1.0;
+    const double pow_Frigorifero = -0.4;
+    const double pow_Lavatrice = -2.0;
+    const double pow_Lavastoviglie = -1.5;
+    const double pow_Tapparelle = -0.3;
+    const double pow_Microonde = -0.8;
+    const double pow_Asciugatrice = -0.5;
+    const double pow_Televisore= -0.2;
 
     /*Oggetti di tipo time utilizzati per impostare un orario di inizio e di fine per i dispositivi manual,
     mentre per i dispositivi CP si imposta solo l'orario di inzio*/
@@ -331,6 +340,12 @@ int main()
     ManualDevice m;
     PresetDevice ps;
 
+    std::vector<ManualDevice> manual;
+    std::vector<PresetDevide> preset;
+
+    int num_Manual = 0;
+    int num_Preset = 0;
+
     int choice;
 
     /*Costante utilizzata perchè choice rimane a 0 e termina il programma
@@ -359,71 +374,102 @@ int main()
                         //Inserimento dispositivi nel sistema domotico in base alla scelta
                         case 1:
                             name = "Impianto Fotovoltaico " + std::to_string(num_Impianto);
-                            ds.add(ManualDevice(name, 1.5));
-                            std::cout<< name <<" was added\n";
+                            m = ManualDevie(name, pow_Televisore);
+                            manual[num_Manual] = m;
+                            ds.add(manual[num_Manual]);
+                            std::cout<< manual[num_Manual].get_name()<<" was added\n";
                             num_Impianto++;
+                            num_Manual++;
                         break;
 
                         case 2:
                             name = "Pompa di calore + Termostato " + std::to_string(num_Pompa);
-                            ds.add(ManualDevice(name, -2.0));
-                            std::cout<< name <<" was added\n";
+                            m = ManualDevie(name, pow_Pompa);
+                            manual[num_Manual] = m;
+                            ds.add(manual[num_Manual]);
+                            std::cout<< manual[num_Manual].get_name()<<" was added\n";
                             num_Pompa++;
+                            num_Manual++;
                         break;
 
                         case 3:
                             name = "Scaldabagno " + std::to_string(num_Scaldabagno);
-                            ds.add(ManualDevice(name, -1.0));
-                            std::cout<< name <<" was added\n";
+                            m = ManualDevie(name, pow_Scaldabagno);
+                            manual[num_Manual] = m;
+                            ds.add(manual[num_Manual]);
+                            std::cout<< manual[num_Manual].get_name()<<" was added\n";
                             num_Scaldabagno++;
+                            num_Manual++;
                         break;
 
                         case 4:
                             name = "Frigorifero " + std::to_string(num_Frigorifero);
-                            ds.add(ManualDevice(name, -0.4));
-                            std::cout<< name <<" was added\n";
+                            m = ManualDevie(name, pow_Frigorifero);
+                            manual[num_Manual] = m;
+                            ds.add(manual[num_Manual]);
+                            std::cout<< manual[num_Manual].get_name()<<" was added\n";
                             num_Frigorifero++;
+                            num_Manual++;
                         break;
-
+                        
                         case 5:
                             name = "Lavatrice " + std::to_string(num_Lavatrice);
-                            ds.add(PresetDevice(name, -2.0, time_Lavatrice));
-                            std::cout<< name <<" was added\n";
+                            ps = PresetDevice(name, pow_Lavatrice, time_Lavatrice);
+                            preset[num_Preset] = ps;
+                            ds.add(preset[num_Preset);
+                            std::cout<< preset[num_Preset.get_name()<<" was added\n";
                             num_Lavatrice++;
+                            num_Preset++;
                         break;
 
                         case 6:
                             name = "Lavastoviglie " + std::to_string(num_Lavastoviglie);
-                            ds.add(PresetDevice(name, -1.5, time_Lavastoviglie));
-                            std::cout<< name <<" was added\n";
+                            ps = PresetDevice(name, pow_Lavastoviglie, time_Lavastoviglie);
+                            preset[num_Preset] = ps;
+                            ds.add(preset[num_Preset);
+                            std::cout<< preset[num_Preset.get_name()<<" was added\n";
                             num_Lavastoviglie++;
+                            num_Preset++;
                         break;
-
+                        
                         case 7:
                             name = "Tapparelle Elettriche " + std::to_string(num_Tapparelle);
-                            ds.add(PresetDevice(name, -0.3, time_Tapparelle));
-                            std::cout<< name <<" was added\n";
-                            num_Tapparelle++;
+                            ps = PresetDevice(name, pow_Lavatrice, time_Lavatrice);
+                            preset[num_Preset] = ps;
+                            ds.add(preset[num_Preset);
+                            std::cout<< preset[num_Preset.get_name()<<" was added\n";
+                            num_Lavatrice++;
+                            num_Preset++;
                         break;
-
+                        
                         case 8:
                             name = "Microonde " + std::to_string(num_Microonde);
-                            ds.add(PresetDevice(name, -0.8, time_Microonde));
-                            std::cout<< name <<" was added\n";
+                            ps = PresetDevice(name, pow_Microonde, time_Microonde);
+                            preset[num_Preset] = ps;
+                            ds.add(preset[num_Preset);
+                            std::cout<< preset[num_Preset.get_name()<<" was added\n";
+                            num_Microonde++;
+                            num_Preset++;
                         break;
 
                         case 9:
                             name = "Asciugatrice " + std::to_string(num_Asciugatrice);
-                            ds.add(PresetDevice(name, -0.5, time_Asciugatrice));
-                            std::cout<< name <<" was added\n";
+                            ps = PresetDevice(name, pow_Asciugatrice, time_Asciugatrice);
+                            preset[num_Preset] = ps;
+                            ds.add(preset[num_Preset);
+                            std::cout<< preset[num_Preset.get_name()<<" was added\n";
                             num_Asciugatrice++;
+                            num_Preset++;
                         break;
 
                         case 10:
                             name = "Televisore " + std::to_string(num_Televisore);
-                            ds.add(PresetDevice(name, -0.2, time_Televisore));
-                            std::cout<< name <<" was added\n";
+                            ps = PresetDevice(name, pow_Televisore, time_Televisore);
+                            preset[num_Preset] = ps;
+                            ds.add(preset[num_Preset);
+                            std::cout<< preset[num_Preset.get_name()<<" was added\n";
                             num_Televisore++;
+                            num_Preset++;
                         break;
 
                         case 0:
@@ -504,9 +550,18 @@ int main()
 
                                 hour.clear();
 
-                                hour = splitString(match[3],':');
-                                time_end = Time(std::stoi(hour[0]),std::stoi(hour[1]));
-
+                                /*Nel caso il secondo orario non venisse inserito, per i dispositivi manuali viene 
+                                impostato di default alle 23:59*/
+                                
+                                if(match[3].empty())
+                                {
+                                    time_end = Time(23,59);
+                                }else
+                                {
+                                    hour = splitString(match[3],':');
+                                    time_end = Time(std::stoi(hour[0]),std::stoi(hour[1]));
+                                }
+                                
                                 hour.clear();
                                 hour.shrink_to_fit();
 
