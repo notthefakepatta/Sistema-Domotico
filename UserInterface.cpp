@@ -284,6 +284,10 @@ int main()
     const Time time_Asciugatrice (1 , 0);
     const Time time_Televisore (1 , 0);
 
+    /*Variabili double per la potenza dei vari dispositivi*/
+
+    const double 
+
     /*Oggetti di tipo time utilizzati per impostare un orario di inizio e di fine per i dispositivi manual,
     mentre per i dispositivi CP si imposta solo l'orario di inzio*/
     Time time_begin;
