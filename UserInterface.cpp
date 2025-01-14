@@ -375,7 +375,7 @@ int main()
                         case 1:
                             name = "Impianto Fotovoltaico " + std::to_string(num_Impianto);
                             m = ManualDevie(name, pow_Televisore);
-                            manual[num_Manual] = m;
+                            manual.push_back(m);
                             ds.add(manual[num_Manual]);
                             std::cout<< manual[num_Manual].get_name()<<" was added\n";
                             num_Impianto++;
@@ -385,7 +385,7 @@ int main()
                         case 2:
                             name = "Pompa di calore + Termostato " + std::to_string(num_Pompa);
                             m = ManualDevie(name, pow_Pompa);
-                            manual[num_Manual] = m;
+                            manual.push_back(m);
                             ds.add(manual[num_Manual]);
                             std::cout<< manual[num_Manual].get_name()<<" was added\n";
                             num_Pompa++;
